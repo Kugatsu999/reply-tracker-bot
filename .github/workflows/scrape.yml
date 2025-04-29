@@ -1,19 +1,14 @@
-name: Track Replies
+name: Scrape Replies
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 * * * *'  # 毎時0分に実行
 
 jobs:
-  reply-tracking:
+  run-scraper:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -25,8 +20,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y wget unzip xvfb jq
+          pip install selenium beautifulsoup4
 
-      - name: Download Chrome & Chromedriver (latest stable)
+      - name: Download Chrome & Chromedriver
         run: |
           wget https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json -O versions.json
           URL=$(jq -r '.channels.Stable.downloads.chrome[] | select(.platform == "linux64") | .url' versions.json)
@@ -41,18 +37,14 @@ jobs:
           sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
           sudo chmod +x /usr/local/bin/google-chrome /usr/local/bin/chromedriver
 
-      - name: Install Python packages
+      - name: Run reply tracker
         run: |
-          pip install -r requirements.txt
-
-      - name: Run Reply Tracker
-        run: |
-          Xvfb :99 &
+          Xvfb :99 & 
           export DISPLAY=:99
           python reply_tracker.py
 
-      - name: Upload CSV Result
-        uses: actions/upload-artifact@v3.1.4
+      - name: Upload CSV
+        uses: actions/upload-artifact@v3
         with:
-          name: reply-results
+          name: replies_csv
           path: '*.csv'
