@@ -2,7 +2,7 @@ name: Scrape Replies
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 * * * *'  # 毎時実行
   workflow_dispatch:
 
 jobs:
@@ -40,11 +40,11 @@ jobs:
       - name: Install Python packages
         run: pip install selenium beautifulsoup4
 
-      - name: Run script
+      - name: Run scraper
         env:
           DISPLAY: ":99"
         run: |
-          Xvfb :99 &  # バーチャルディスプレイ起動
+          Xvfb :99 &
           python reply_tracker.py
 
       - name: Upload result CSV
