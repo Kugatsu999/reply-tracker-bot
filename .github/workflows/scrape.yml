@@ -2,8 +2,8 @@ name: Scrape Replies
 
 on:
   schedule:
-    - cron: '0 * * * *'  # 毎時実行（UTC時間）
-  workflow_dispatch:     # 手動でも実行できるようにする
+    - cron: '0 * * * *'  # 毎時実行（UTC）
+  workflow_dispatch:
 
 jobs:
   run-scraper:
@@ -16,20 +16,37 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'  # 安定版を指定
+          python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install Chrome and Chromedriver
         run: |
-          pip install selenium beautifulsoup4
           sudo apt-get update
-          sudo apt-get install -y chromium-browser
-          wget https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.112/linux64/chromedriver-linux64.zip
-          unzip chromedriver-linux64.zip
+          sudo apt-get install -y wget unzip curl xvfb libxi6 libgconf-2-4 default-jdk
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get install -f -y
+
+          CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+')
+          echo "Using Chrome version: $CHROME_VERSION"
+
+          CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" \
+            | jq -r ".channels.Stable.downloads.chromedriver[] | select(.platform == \"linux64\") | .url" \
+            | grep "$CHROME_VERSION" \
+            | head -n 1)
+
+          wget "$CHROMEDRIVER_VERSION" -O chromedriver.zip
+          unzip chromedriver.zip
           sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
           sudo chmod +x /usr/local/bin/chromedriver
 
+      - name: Install Python packages
+        run: pip install selenium beautifulsoup4
+
       - name: Run script
-        run: python reply_tracker.py
+        env:
+          DISPLAY: ":99"
+        run: |
+          Xvfb :99 &  # 仮想ディスプレイ環境
+          python reply_tracker.py
 
       - name: Upload result CSV
         uses: actions/upload-artifact@v4
