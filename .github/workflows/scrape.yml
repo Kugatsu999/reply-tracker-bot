@@ -2,47 +2,52 @@ name: Scrape Replies
 
 on:
   schedule:
-    - cron: "0 * * * *" # 毎時
+    - cron: '0 * * * *'  # 毎時0分に実行
   workflow_dispatch:
 
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
 
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip curl xvfb libxi6 libxrender1 jq
-          pip install selenium beautifulsoup4
+          sudo apt-get install -y wget unzip curl jq xvfb
 
-      - name: Download Chrome & ChromeDriver
+      - name: Install Chrome & ChromeDriver (latest stable)
         run: |
-          wget https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.112/linux64/chrome-linux64.zip
-          unzip chrome-linux64.zip
-          sudo mv chrome-linux64 /opt/chrome
-          sudo ln -s /opt/chrome/chrome /usr/bin/google-chrome
+          wget https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json -O versions.json
+          URL=$(jq -r '.channels.Stable.downloads.chrome[] | select(.platform == "linux64") | .url' versions.json)
+          DRIVER_URL=$(jq -r '.channels.Stable.downloads.chromedriver[] | select(.platform == "linux64") | .url' versions.json)
 
-          wget https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.112/linux64/chromedriver-linux64.zip
-          unzip chromedriver-linux64.zip
-          sudo mv chromedriver-linux64/chromedriver /usr/bin/chromedriver
-          sudo chmod +x /usr/bin/chromedriver
+          wget $URL -O chrome.zip
+          unzip chrome.zip -d chrome
+          wget $DRIVER_URL -O chromedriver.zip
+          unzip chromedriver.zip -d chromedriver
+
+          sudo mv chrome/linux64/chrome /usr/local/bin/google-chrome
+          sudo mv chromedriver/linux64/chromedriver /usr/local/bin/chromedriver
+          sudo chmod +x /usr/local/bin/google-chrome /usr/local/bin/chromedriver
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install pip packages
+        run: pip install selenium beautifulsoup4
 
       - name: Run scraper
         run: |
-          Xvfb :99 & export DISPLAY=:99
+          Xvfb :99 &
+          export DISPLAY=:99
           python reply_tracker.py
 
-      - name: Upload CSV
-        uses: actions/upload-artifact@v4
+      - name: Upload result CSV
+        uses: actions/upload-artifact@v3
         with:
           name: replies_csv
-          path: replies.csv
+          path: replies_*.csv
