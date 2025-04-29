@@ -2,12 +2,13 @@ name: Scrape Replies
 
 on:
   schedule:
-    - cron: '0 * * * *'  # 毎時0分に実行
-  workflow_dispatch:
+    - cron: '0 * * * *'  # 毎時0分に自動実行
+  workflow_dispatch:      # 手動実行も有効にする
 
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -15,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip curl jq xvfb
+          sudo apt-get install -y wget unzip curl jq xvfb libxi6 libgconf-2-4
 
       - name: Install Chrome & ChromeDriver (latest stable)
         run: |
@@ -37,17 +38,17 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install pip packages
+      - name: Install Python packages
         run: pip install selenium beautifulsoup4
 
-      - name: Run scraper
+      - name: Run reply tracker
         run: |
           Xvfb :99 &
           export DISPLAY=:99
           python reply_tracker.py
 
       - name: Upload result CSV
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: replies_csv
           path: replies_*.csv
