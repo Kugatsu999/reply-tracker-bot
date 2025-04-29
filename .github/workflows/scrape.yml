@@ -3,7 +3,7 @@ name: Track Replies
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 * * * *'  # 毎時0分に実行（任意）
+    - cron: '0 * * * *'  # 毎時0分に実行
 
 jobs:
   reply-tracking:
@@ -47,12 +47,12 @@ jobs:
 
       - name: Run Reply Tracker
         run: |
-          Xvfb :99 &  # GUI環境のエミュレーター起動
+          Xvfb :99 &
           export DISPLAY=:99
           python reply_tracker.py
 
       - name: Upload CSV Result
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.4
         with:
           name: reply-results
           path: '*.csv'
