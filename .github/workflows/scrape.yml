@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip curl jq xvfb libxi6 libgconf-2-4
+          sudo apt-get install -y wget unzip curl jq xvfb libxi6
 
       - name: Install Chrome & ChromeDriver (latest stable)
         run: |
