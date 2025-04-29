@@ -48,8 +48,9 @@ jobs:
           export DISPLAY=:99
           python reply_tracker.py
 
-      - name: Upload CSV Result
-        uses: actions/upload-artifact@v3.1.3
-        with:
-          name: reply-results
-          path: '*.csv'
+          - name: Upload CSV Result
+          uses: actions/upload-artifact@v3
+          with:
+            name: reply-results
+            path: '*.csv'
+        
