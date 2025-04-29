@@ -3,7 +3,7 @@ name: Scrape Replies
 on:
   schedule:
     - cron: '0 * * * *'  # 毎時実行（UTC時間）
-  workflow_dispatch:     # 手動実行も有効にする
+  workflow_dispatch:     # 手動でも実行できるようにする
 
 jobs:
   run-scraper:
@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'  # ←ここを修正！
+          python-version: '3.10'  # 安定版を指定
 
       - name: Install dependencies
         run: |
