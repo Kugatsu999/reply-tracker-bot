@@ -2,7 +2,7 @@ name: Scrape Replies
 
 on:
   schedule:
-    - cron: '0 * * * *'  # 毎時実行（UTC）
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -18,24 +18,23 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Chrome and Chromedriver
+      - name: Install Chrome & Chromedriver
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip curl xvfb libxi6 libgconf-2-4 default-jdk
+          sudo apt-get install -y wget unzip curl xvfb libxi6 default-jdk jq
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get install -f -y
+          sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
 
           CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+')
           echo "Using Chrome version: $CHROME_VERSION"
 
-          CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" \
-            | jq -r ".channels.Stable.downloads.chromedriver[] | select(.platform == \"linux64\") | .url" \
-            | grep "$CHROME_VERSION" \
-            | head -n 1)
+          DRIVER_URL=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | \
+            jq -r ".channels.Stable.downloads.chromedriver[] | select(.platform == \"linux64\") | .url")
+          echo "Downloading ChromeDriver from: $DRIVER_URL"
 
-          wget "$CHROMEDRIVER_VERSION" -O chromedriver.zip
+          wget "$DRIVER_URL" -O chromedriver.zip
           unzip chromedriver.zip
-          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
+          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
           sudo chmod +x /usr/local/bin/chromedriver
 
       - name: Install Python packages
@@ -45,7 +44,7 @@ jobs:
         env:
           DISPLAY: ":99"
         run: |
-          Xvfb :99 &  # 仮想ディスプレイ環境
+          Xvfb :99 &  # バーチャルディスプレイ起動
           python reply_tracker.py
 
       - name: Upload result CSV
