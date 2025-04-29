@@ -1,6 +1,6 @@
 import time
-import csv
 import json
+import csv
 from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 # --- 設定 ---
 TARGET_URL = "https://x.com/rai5s9t/with_replies"
 MAX_USERS = 15  # 最大取得件数
-COOKIES_FILE = "cookies.json"  # 追加ポイント
+COOKIES_FILE = "cookies.json"  # ログイン済みCookieの保存ファイル
 
 # --- Seleniumセットアップ ---
 options = Options()
@@ -19,25 +19,18 @@ options.add_argument("--headless")
 options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
+
 driver = webdriver.Chrome(options=options)
 
+# --- Cookieを読み込んでセット ---
+print("🍪 cookies.json を読み込んでセット中...")
+cookies = json.loads(Path(COOKIES_FILE).read_text(encoding="utf-8"))
+driver.get("https://x.com/")  # 先に何でもいいのでページ開かないとCookieをセットできない
+for cookie in cookies:
+    driver.add_cookie(cookie)
+
+# --- リロードしてターゲットページへ ---
 print(f"▶️ {TARGET_URL} を取得中…")
-driver.get("https://x.com/")  # 最初はトップにアクセス
-time.sleep(3)
-
-# --- 🍪 Cookieをセット ---
-if Path(COOKIES_FILE).exists():
-    with open(COOKIES_FILE, "r", encoding="utf-8") as f:
-        cookies = json.load(f)
-    for cookie in cookies:
-        if "sameSite" in cookie and cookie["sameSite"] == "None":
-            cookie["sameSite"] = "Strict"  # GitHub Actions上の問題回避
-        try:
-            driver.add_cookie(cookie)
-        except Exception as e:
-            print(f"Cookieセット失敗: {e}")
-
-# --- 本来のターゲットページへアクセス ---
 driver.get(TARGET_URL)
 time.sleep(5)
 
@@ -74,7 +67,7 @@ def collect_replies():
 collect_replies()
 
 # --- スクロールしながら追加収集 ---
-for _ in range(30):
+for _ in range(30):  # 最大30回スクロール
     if len(reply_targets) >= MAX_USERS:
         break
 
