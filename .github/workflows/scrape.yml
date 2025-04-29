@@ -1,7 +1,7 @@
 name: Track Replies
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # 手動実行用
   schedule:
     - cron: '0 * * * *'  # 毎時実行（任意）
 
@@ -40,11 +40,11 @@ jobs:
 
       - name: Install Python packages
         run: |
-          pip install -r requirements.txt
+          pip install selenium beautifulsoup4
 
       - name: Run Reply Tracker
         run: |
-          Xvfb :99 &
+          Xvfb :99 &  # GUIエミュレータ起動
           export DISPLAY=:99
           python reply_tracker.py
 
