@@ -1,54 +1,58 @@
-name: Scrape Replies
+name: Track Replies
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: '0 * * * *'  # 毎時0分に自動実行
-  workflow_dispatch:      # 手動実行も有効にする
+    - cron: '0 * * * *'  # 毎時0分に実行（任意）
 
 jobs:
-  run-scraper:
+  reply-tracking:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip curl jq xvfb libxi6
-
-      - name: Install Chrome & ChromeDriver (latest stable)
-        run: |
-          wget https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json -O versions.json
-          URL=$(jq -r '.channels.Stable.downloads.chrome[] | select(.platform == "linux64") | .url' versions.json)
-          DRIVER_URL=$(jq -r '.channels.Stable.downloads.chromedriver[] | select(.platform == "linux64") | .url' versions.json)
-
-          wget $URL -O chrome.zip
-          unzip chrome.zip -d chrome
-          wget $DRIVER_URL -O chromedriver.zip
-          unzip chromedriver.zip -d chromedriver
-
-          sudo mv chrome/linux64/chrome /usr/local/bin/google-chrome
-          sudo mv chromedriver/linux64/chromedriver /usr/local/bin/chromedriver
-          sudo chmod +x /usr/local/bin/google-chrome /usr/local/bin/chromedriver
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install Python packages
-        run: pip install selenium beautifulsoup4
-
-      - name: Run reply tracker
+      - name: Install dependencies
         run: |
-          Xvfb :99 &
+          sudo apt-get update
+          sudo apt-get install -y wget unzip xvfb jq
+
+      - name: Download Chrome & Chromedriver (latest stable)
+        run: |
+          wget https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json -O versions.json
+          URL=$(jq -r '.channels.Stable.downloads.chrome[] | select(.platform == "linux64") | .url' versions.json)
+          DRIVER_URL=$(jq -r '.channels.Stable.downloads.chromedriver[] | select(.platform == "linux64") | .url' versions.json)
+
+          wget $URL -O chrome.zip
+          unzip chrome.zip
+          wget $DRIVER_URL -O chromedriver.zip
+          unzip chromedriver.zip
+
+          sudo mv chrome-linux64/chrome /usr/local/bin/google-chrome
+          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
+          sudo chmod +x /usr/local/bin/google-chrome /usr/local/bin/chromedriver
+
+      - name: Install Python packages
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Reply Tracker
+        run: |
+          Xvfb :99 &  # GUI環境のエミュレーター起動
           export DISPLAY=:99
           python reply_tracker.py
 
-      - name: Upload result CSV
-        uses: actions/upload-artifact@v4
+      - name: Upload CSV Result
+        uses: actions/upload-artifact@v3
         with:
-          name: replies_csv
-          path: replies_*.csv
+          name: reply-results
+          path: '*.csv'
