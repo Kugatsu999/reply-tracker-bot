@@ -1,9 +1,8 @@
 name: Track Replies
 
 on:
-  workflow_dispatch:  # 手動実行用
-  schedule:
-    - cron: '0 * * * *'  # 毎時実行（任意）
+  workflow_dispatch:  # 手動実行だけにする
+
 
 jobs:
   reply-tracking:
